@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neurochem Simulator v3.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;600;700&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg0:#010912;--bg1:#020f1e;--bg2:#031526;--bg3:#04192f;
+  --border:rgba(0,150,230,0.15);--border2:rgba(0,180,255,0.28);
+  --accent:#00c8ff;--accent2:#00ffcc;
+  --text:#b0dff5;--text2:#6aaccc;--text3:#2a6a8a;
+  --warn:#ff7700;--danger:#ff2255;
+  --mono:'Share Tech Mono',monospace;--title:'Orbitron',sans-serif;--body:'Exo 2',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;background:var(--bg0);color:var(--text);font-family:var(--body);overflow:hidden}
+#app{display:grid;width:100vw;height:100vh;
+  grid-template-columns:280px 1fr 250px;
+  grid-template-rows:46px 1fr 185px 26px;
+  grid-template-areas:"top top top""left brain right""left bot right""foot foot foot"}
+/* TOPBAR */
+#topbar{grid-area:top;display:flex;align-items:center;gap:12px;padding:0 14px;
+  background:linear-gradient(180deg,#031b30,#020f1e);border-bottom:1px solid var(--border2)}
+.logo{font-family:var(--title);font-size:11px;letter-spacing:3px;white-space:nowrap}
+.logo b{color:var(--accent)}.logo s2{color:var(--accent2)}.logo em{color:var(--text3);font-style:normal;font-size:9px}
+.active-tags{display:flex;gap:4px;flex:1;overflow:hidden}
+.atag{font-family:var(--mono);font-size:8px;letter-spacing:1px;padding:2px 8px;border-radius:2px;border:1px solid;opacity:0;transition:all .3s;white-space:nowrap}
+.atag.on{opacity:1}
+.top-btns{display:flex;gap:5px;margin-left:auto}
+.tbtn{background:rgba(0,100,180,.15);border:1px solid var(--border2);color:var(--text2);
+  font-family:var(--mono);font-size:8px;letter-spacing:1px;padding:4px 9px;cursor:pointer;border-radius:2px;transition:all .2s}
+.tbtn:hover{border-color:var(--accent);color:var(--accent)}
+.tbtn.hot{border-color:var(--warn);color:var(--warn)}
+/* LEFT */
+#left{grid-area:left;background:var(--bg1);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.ptabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.ptab{flex:1;font-family:var(--mono);font-size:8px;letter-spacing:1.5px;text-align:center;padding:8px 2px;
+  cursor:pointer;color:var(--text3);transition:all .2s;border-bottom:2px solid transparent}
+.ptab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tbody{flex:1;overflow-y:auto;display:none}
+.tbody.active{display:block}
+.tbody::-webkit-scrollbar{width:2px}
+.tbody::-webkit-scrollbar-thumb{background:var(--border2)}
+.shdr{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--text3);
+  padding:7px 12px 4px;background:var(--bg2);border-bottom:1px solid var(--border);text-transform:uppercase}
+.sub{padding:6px 12px 5px;border-bottom:1px solid rgba(0,60,100,.2)}
+.srow{display:flex;align-items:center;gap:5px;margin-bottom:2px}
+.sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sname{font-family:var(--mono);font-size:9px;letter-spacing:.3px;flex:1}
+.spct{font-family:var(--mono);font-size:10px;color:var(--accent2);min-width:28px;text-align:right}
+.sdesc{font-size:8px;color:var(--text3);padding-left:12px;margin-bottom:2px;line-height:1.3}
+input[type=range]{width:100%;height:3px;cursor:pointer;-webkit-appearance:none;appearance:none;border-radius:2px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;cursor:pointer;border:1px solid rgba(255,255,255,.3)}
+.lfooter{flex-shrink:0;display:flex;gap:5px;padding:7px 10px;border-top:1px solid var(--border);background:var(--bg2)}
+.lfbtn{flex:1;padding:5px;font-family:var(--mono);font-size:8px;letter-spacing:1px;background:transparent;
+  border:1px solid var(--border2);color:var(--text2);cursor:pointer;border-radius:2px;transition:all .2s}
+.lfbtn:hover{border-color:var(--accent);color:var(--accent)}
+.lfbtn.d:hover{border-color:var(--danger);color:var(--danger)}
+/* PRESETS */
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:8px}
+.pbtn{background:var(--bg2);border:1px solid var(--border);color:var(--text2);font-family:var(--mono);
+  font-size:8px;letter-spacing:.3px;padding:8px 4px;cursor:pointer;border-radius:3px;text-align:center;transition:all .25s;line-height:1.5}
+.pbtn:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,140,220,.08)}
+.pbtn .pi{font-size:15px;display:block;margin-bottom:2px}
+/* INFO */
+.ient{margin:5px 8px;padding:7px;background:var(--bg2);border:1px solid var(--border);border-radius:3px}
+.iename{font-family:var(--mono);font-size:9px;margin-bottom:2px}
+.iedesc{font-size:8px;color:var(--text2);line-height:1.4}
+.ieregs{font-size:8px;color:var(--text3);margin-top:2px}
+/* BRAIN */
+#brain-area{grid-area:brain;position:relative;background:#010912;overflow:hidden}
+#three-canvas{width:100%;height:100%;display:block}
+#rtip{position:absolute;top:10px;left:50%;transform:translateX(-50%);
+  font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--accent);
+  background:rgba(1,9,18,.9);padding:3px 12px;border:1px solid var(--border2);
+  border-radius:20px;pointer-events:none;opacity:0;transition:opacity .3s;white-space:nowrap;z-index:5}
+#spills{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:5}
+.sp{font-family:var(--mono);font-size:8px;letter-spacing:1.5px;padding:3px 11px;
+  border-radius:20px;border:1px solid var(--border);color:var(--text3);transition:all .4s}
+.sp.calm{border-color:#00ff88;color:#00ff88;background:rgba(0,255,136,.06);text-shadow:0 0 6px #00ff88}
+.sp.focus{border-color:#00aaff;color:#00aaff;background:rgba(0,170,255,.06);text-shadow:0 0 6px #00aaff}
+.sp.euph{border-color:#cc55ff;color:#cc55ff;background:rgba(204,85,255,.06);text-shadow:0 0 6px #cc55ff}
+.sp.warn{border-color:#ff7700;color:#ff7700;background:rgba(255,119,0,.08);animation:bl 1s infinite}
+.sp.danger{border-color:#ff2255;color:#ff2255;background:rgba(255,34,85,.1);animation:bl .6s infinite}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.4}}
+#cpop{position:absolute;top:44px;right:10px;background:rgba(15,3,0,.95);border:1px solid #ff4400;
+  border-radius:4px;padding:9px 11px;max-width:200px;display:none;z-index:20}
+#cpop.show{display:block}
+.cptitle{font-family:var(--mono);font-size:8px;color:#ff6600;letter-spacing:2px;margin-bottom:5px}
+.cpitem{font-size:8px;color:#ff9944;margin-bottom:3px;line-height:1.4}
+/* RIGHT */
+#right{grid-area:right;background:var(--bg1);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.rsec{padding:8px 10px;border-bottom:1px solid var(--border);overflow-y:auto;flex:1}
+.rsec::-webkit-scrollbar{width:2px}
+.rsec::-webkit-scrollbar-thumb{background:var(--border2)}
+.rhdr{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--text3);margin-bottom:6px;text-transform:uppercase}
+.ari{padding:5px 0;border-bottom:1px solid rgba(0,50,90,.3);cursor:pointer;transition:all .2s}
+.ari:hover{padding-left:3px}
+.aritop{display:flex;align-items:center;gap:4px}
+.aridot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.ariname{font-family:var(--mono);font-size:9px;flex:1;letter-spacing:.2px}
+.aripct{font-family:var(--mono);font-size:9px;color:var(--accent2);font-weight:600}
+.arisub{font-size:7px;color:var(--text3);padding-left:10px;margin-top:1px;line-height:1.2}
+.aribar{height:2px;background:var(--bg0);border-radius:1px;margin-top:3px}
+.arifill{height:100%;border-radius:1px;transition:width .5s}
+.selbox{margin:8px;padding:8px;background:var(--bg2);border:1px solid var(--border2);border-radius:3px;flex-shrink:0}
+.sblbl{font-family:var(--mono);font-size:7px;letter-spacing:1.5px;color:var(--text3);margin-bottom:1px;text-transform:uppercase}
+.sbval{font-family:var(--mono);font-size:10px;color:var(--accent);margin-bottom:5px}
+.sbdet{font-size:8px;color:var(--text2);line-height:1.4}
+/* VIEW BTNS */
+.vwrap{flex-shrink:0;border-top:1px solid var(--border);padding:6px 8px}
+.vhdr{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--text3);margin-bottom:5px;text-transform:uppercase}
+.vbtns{display:flex;gap:4px}
+.vbtn{flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--text3);
+  font-family:var(--mono);font-size:7px;letter-spacing:.5px;padding:5px 3px;cursor:pointer;
+  border-radius:2px;text-align:center;transition:all .2s}
+.vbtn:hover,.vbtn.active{border-color:var(--accent);color:var(--accent);background:rgba(0,140,220,.1)}
+/* SIMINFO */
+.siminfo{flex-shrink:0;border-top:1px solid var(--border);padding:7px 10px}
+.sirow{margin-bottom:5px}
+.silbl{font-family:var(--mono);font-size:7px;letter-spacing:1.5px;color:var(--text3);margin-bottom:1px;text-transform:uppercase}
+.sival{font-family:var(--mono);font-size:11px;color:var(--accent)}
+.statebox{background:var(--bg2);border:1px solid var(--border2);border-radius:3px;padding:6px 8px;margin-top:4px}
+/* BOTTOM */
+#bot{grid-area:bot;display:grid;grid-template-columns:1fr 1fr;background:var(--bg1);border-top:1px solid var(--border);overflow:hidden}
+.bpanel{padding:8px 12px;border-right:1px solid var(--border);overflow:hidden}
+.bpanel:last-child{border-right:none}
+.bhdr{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--text3);margin-bottom:6px;text-transform:uppercase}
+#argrid{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.argi{display:flex;align-items:flex-start;gap:4px;padding:4px;background:var(--bg2);border:1px solid var(--border);border-radius:3px}
+.argidot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:1px}
+.argiinfo{flex:1;min-width:0}
+.arginame{font-family:var(--mono);font-size:8px;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.argisub{font-size:7px;color:var(--text3);line-height:1.2}
+.argipct{font-family:var(--mono);font-size:8px;color:var(--accent2);flex-shrink:0;padding-left:3px}
+#chartcv{width:100%;height:118px;display:block}
+.cleg{display:flex;flex-wrap:wrap;gap:3px 7px;margin-top:3px}
+.cli{display:flex;align-items:center;gap:3px;font-family:var(--mono);font-size:7px;color:var(--text3)}
+.cldot{width:5px;height:5px;border-radius:50%}
+/* FOOTER */
+#footer{grid-area:foot;display:flex;align-items:center;justify-content:center;
+  background:var(--bg1);border-top:1px solid var(--border)}
+#footer span{font-size:8px;color:var(--text3);font-style:italic;letter-spacing:.3px}
+/* scanlines */
+body::after{content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.02) 2px,rgba(0,0,0,.02) 4px);
+  pointer-events:none;z-index:1000}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="topbar">
+  <div class="logo"><b>NEUROCHEM</b> <s2 style="color:#00ffcc">SIMULATOR</s2> <em>v3.0</em></div>
+  <div style="font-family:var(--mono);font-size:8px;color:var(--text3);letter-spacing:2px;white-space:nowrap;margin-left:8px">ACTIVE CHEMICALS</div>
+  <div class="active-tags" id="active-tags"></div>
+  <div class="top-btns">
+    <button class="tbtn" id="btn-conf" onclick="toggleConflicts()">⚠ CONFLICTS</button>
+    <button class="tbtn" onclick="exportData()">↗ EXPORT</button>
+  </div>
+</div>
+
+<div id="left">
+  <div class="ptabs">
+    <div class="ptab active" onclick="switchTab('chem')">CHEMICALS</div>
+    <div class="ptab" onclick="switchTab('pre')">PRESETS</div>
+    <div class="ptab" onclick="switchTab('inf')">INFO</div>
+  </div>
+  <div class="tbody active" id="tab-chem">
+    <div class="shdr">Natural Neurochemicals</div>
+    <div id="endo-list"></div>
+    <div class="shdr">Synthetic Compounds</div>
+    <div id="exo-list"></div>
+  </div>
+  <div class="tbody" id="tab-pre">
+    <div class="shdr">Scenario Presets</div>
+    <div class="pgrid" id="pgrid"></div>
+  </div>
+  <div class="tbody" id="tab-inf">
+    <div class="shdr" style="padding:7px 12px">Substance Guide</div>
+    <div id="inflist"></div>
+  </div>
+  <div class="lfooter">
+    <button class="lfbtn d" onclick="resetAll()">RESET ALL</button>
+    <button class="lfbtn" onclick="savePreset()">SAVE PRESET</button>
+  </div>
+</div>
+
+<div id="brain-area">
+  <canvas id="three-canvas"></canvas>
+  <div id="rtip"></div>
+  <div id="spills">
+    <div class="sp" id="p-calm">CALM</div>
+    <div class="sp" id="p-focus">FOCUSED</div>
+    <div class="sp" id="p-alert">ALERT</div>
+    <div class="sp" id="p-euph">EUPHORIA</div>
+    <div class="sp" id="p-warn">OVERDOSE RISK</div>
+  </div>
+  <div id="cpop">
+    <div class="cptitle">⚠ CONFLICT WARNINGS</div>
+    <div id="clist"></div>
+  </div>
+</div>
+
+<div id="right">
+  <div class="rsec">
+    <div class="rhdr">Active Regions</div>
+    <div id="rregs"></div>
+  </div>
+  <div id="selwrap" style="display:none">
+    <div class="selbox" id="selbox"></div>
+  </div>
+  <div class="vwrap">
+    <div class="vhdr">View</div>
+    <div class="vbtns">
+      <div class="vbtn active" id="vb-lat" onclick="setView('lat')">LATERAL</div>
+      <div class="vbtn" id="vb-sag" onclick="setView('sag')">SAGITTAL</div>
+      <div class="vbtn" id="vb-top" onclick="setView('top')">DORSAL</div>
+      <div class="vbtn" id="vb-ant" onclick="setView('ant')">ANTERIOR</div>
+    </div>
+  </div>
+  <div class="siminfo">
+    <div class="sirow"><div class="silbl">Time Elapsed</div><div class="sival" id="elapsed">00:00:00</div></div>
+    <div class="sirow"><div class="silbl">Dominant</div><div class="sival" id="dominant" style="font-size:9px">—</div></div>
+    <div class="statebox">
+      <div class="silbl">Mental State</div>
+      <div style="font-family:var(--title);font-size:10px;letter-spacing:1px;margin-top:2px;transition:color .5s" id="mstate">BASELINE</div>
+    </div>
+  </div>
+</div>
+
+<div id="bot">
+  <div class="bpanel">
+    <div class="bhdr">Active Regions</div>
+    <div id="argrid"></div>
+  </div>
+  <div class="bpanel">
+    <div class="bhdr">Neurotransmitter Activity Over Time</div>
+    <canvas id="chartcv"></canvas>
+    <div class="cleg" id="cleg"></div>
+  </div>
+</div>
+
+<div id="footer"><span>Educational & research purposes only. Not a substitute for professional medical advice.</span></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+const SUBS = {
+  endo:[
+    {id:'dopamine',      name:'Dopamine',        color:'#00dd55', hex:0x00dd55, regions:['nucleus_accumbens','prefrontal','striatum','vta'],        desc:'Reward, motivation & pleasure'},
+    {id:'serotonin',     name:'Serotonin',        color:'#0099ff', hex:0x0099ff, regions:['raphe','prefrontal','hippocampus','amygdala'],           desc:'Mood regulation & emotional stability'},
+    {id:'norepinephrine',name:'Norepinephrine',   color:'#ffaa00', hex:0xffaa00, regions:['locus_coeruleus','prefrontal','amygdala'],              desc:'Arousal, alertness & stress'},
+    {id:'gaba',          name:'GABA',             color:'#cc44ff', hex:0xcc44ff, regions:['cerebellum','brainstem','thalamus','frontal'],          desc:'Primary inhibitory neurotransmitter'},
+    {id:'glutamate',     name:'Glutamate',        color:'#ff7722', hex:0xff7722, regions:['prefrontal','hippocampus','thalamus','temporal'],       desc:'Primary excitatory transmitter'},
+    {id:'acetylcholine', name:'Acetylcholine',    color:'#00ffee', hex:0x00ffee, regions:['frontal','hippocampus','brainstem'],                   desc:'Attention & memory consolidation'},
+    {id:'endorphin',     name:'Endorphins',       color:'#ff55aa', hex:0xff55aa, regions:['hypothalamus','brainstem','amygdala','nucleus_accumbens'],desc:'Natural pain relief & euphoria'},
+    {id:'oxytocin',      name:'Oxytocin',         color:'#ff3366', hex:0xff3366, regions:['hypothalamus','amygdala'],                            desc:'Social bonding & trust'},
+    {id:'cortisol',      name:'Cortisol',         color:'#ff9900', hex:0xff9900, regions:['amygdala','hippocampus','prefrontal'],                 desc:'Stress hormone — fight or flight'},
+  ],
+  exo:[
+    {id:'lsd',           name:'LSD',              color:'#cc44ff', hex:0xcc44ff, regions:['frontal','thalamus','prefrontal','hippocampus','raphe'],desc:'5-HT2A agonist — psychedelic'},
+    {id:'mdma',          name:'MDMA',             color:'#ff44aa', hex:0xff44aa, regions:['raphe','nucleus_accumbens','amygdala','prefrontal'],   desc:'Serotonin/dopamine/NE flood'},
+    {id:'psilocybin',    name:'Psilocybin',       color:'#ff88ee', hex:0xff88ee, regions:['frontal','thalamus','prefrontal','raphe'],            desc:'5-HT2A — natural psychedelic'},
+    {id:'caffeine',      name:'Caffeine',         color:'#00ff88', hex:0x00ff88, regions:['thalamus','prefrontal','brainstem'],                  desc:'Adenosine antagonist — stimulant'},
+    {id:'alcohol',       name:'Alcohol',          color:'#4499ff', hex:0x4499ff, regions:['cerebellum','prefrontal','brainstem','hippocampus'],  desc:'GABA enhancer, NMDA inhibitor'},
+    {id:'thc',           name:'THC',              color:'#88ff44', hex:0x88ff44, regions:['hippocampus','cerebellum','prefrontal','nucleus_accumbens'],desc:'CB1 agonist — cannabis'},
+  ]
+};
+
+const REGIONS = {
+  // ── CEREBRAL CORTEX LOBES ──
+  frontal:           {label:'Frontal Lobe',          desc:'Higher cognition, personality, voluntary movement, Broca\'s area'},
+  prefrontal:        {label:'Prefrontal Cortex',      desc:'Executive function, decision making, planning, working memory'},
+  parietal:          {label:'Parietal Lobe',          desc:'Sensory integration, spatial awareness, body image'},
+  temporal:          {label:'Temporal Lobe',          desc:'Auditory processing, language comprehension, memory'},
+  occipital:         {label:'Occipital Lobe',         desc:'Visual processing, color, motion and shape perception'},
+  // ── DEEP STRUCTURES ──
+  hippocampus:       {label:'Hippocampus',            desc:'Memory consolidation, spatial navigation, learning'},
+  amygdala:          {label:'Amygdala',               desc:'Emotion processing, fear response, threat detection'},
+  nucleus_accumbens: {label:'Nucleus Accumbens',      desc:'Reward circuit hub, addiction, pleasure, motivation'},
+  thalamus:          {label:'Thalamus',               desc:'Sensory relay station, consciousness, sleep regulation'},
+  hypothalamus:      {label:'Hypothalamus',           desc:'Homeostasis, hunger, thirst, temperature, hormones'},
+  striatum:          {label:'Striatum',               desc:'Motor control, reward learning, habit formation'},
+  vta:               {label:'Ventral Tegmental Area', desc:'Dopamine origin — reward pathway, motivation'},
+  raphe:             {label:'Raphe Nuclei',           desc:'Serotonin synthesis and distribution hub'},
+  locus_coeruleus:   {label:'Locus Coeruleus',        desc:'Norepinephrine source, arousal and attention'},
+  // ── POSTERIOR ──
+  cerebellum:        {label:'Cerebellum',             desc:'Motor coordination, balance, procedural learning'},
+  brainstem:         {label:'Brainstem',              desc:'Vital functions: breathing, heart rate, consciousness'},
+  corpus_callosum:   {label:'Corpus Callosum',        desc:'Bridge between hemispheres, bilateral coordination'},
+};
+
+const PRESETS=[
+  {name:'Deep Sleep',    ico:'🌙',vals:{gaba:80,serotonin:30,dopamine:10,norepinephrine:5}},
+  {name:'Flow State',    ico:'⚡',vals:{dopamine:75,norepinephrine:60,acetylcholine:65,serotonin:45}},
+  {name:'Anxiety',       ico:'😰',vals:{norepinephrine:85,cortisol:75,glutamate:70}},
+  {name:'Euphoria',      ico:'✨',vals:{dopamine:90,endorphin:80,serotonin:70,oxytocin:60}},
+  {name:'Fight/Flight',  ico:'⚔️',vals:{norepinephrine:95,cortisol:90,glutamate:75,dopamine:40}},
+  {name:'MDMA Trip',     ico:'💊',vals:{mdma:75,dopamine:85,serotonin:90,norepinephrine:70}},
+  {name:'LSD Journey',   ico:'🌀',vals:{lsd:70,serotonin:60,dopamine:50,glutamate:65}},
+  {name:'Meditation',    ico:'🧘',vals:{serotonin:75,gaba:65,oxytocin:55,dopamine:35}},
+  {name:'Caffeine Rush', ico:'☕',vals:{caffeine:80,norepinephrine:65,dopamine:45}},
+  {name:'Depression',    ico:'💧',vals:{serotonin:8,dopamine:6,norepinephrine:10,cortisol:72}},
+];
+
+const CONFLICTS=[
+  {ids:['mdma','lsd'],       msg:'Serotonin syndrome — dangerous'},
+  {ids:['mdma','psilocybin'],msg:'Serotonin overload — severe stress'},
+  {ids:['alcohol','lsd'],    msg:'Unpredictable — impaired judgment'},
+  {ids:['alcohol','mdma'],   msg:'Cardiotoxic — dehydration risk'},
+  {ids:['lsd','psilocybin'], msg:'Reality dissociation — extreme'},
+];
+
+const vals={};
+[...SUBS.endo,...SUBS.exo].forEach(s=>vals[s.id]=0);
+
+// ═══════════════════════════════════════════
+// THREE.JS BRAIN
+// ═══════════════════════════════════════════
+let scene,camera,renderer,clock;
+let brainGroup, regionMeshes={}, regionGlows={};
+let isDrag=false,lastMX=0,lastMY=0;
+let targetRotY=-0.3,targetRotX=0.15,curRotY=-0.3,curRotX=0.15;
+let hoveredRegion=null;
+
+function initThree(){
+  const wrap=document.getElementById('brain-area');
+  const W=wrap.clientWidth,H=wrap.clientHeight;
+
+  scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x010912);
+
+  camera=new THREE.PerspectiveCamera(45,W/H,0.1,100);
+  camera.position.set(0,0,5.5);
+
+  renderer=new THREE.WebGLRenderer({canvas:document.getElementById('three-canvas'),antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setSize(W,H);
+  renderer.sortObjects=true;
+
+  clock=new THREE.Clock();
+
+  // Lighting
+  const ambient=new THREE.AmbientLight(0x001830,2.5);
+  scene.add(ambient);
+  const dir1=new THREE.DirectionalLight(0x0066ff,1.5);
+  dir1.position.set(-3,4,3);
+  scene.add(dir1);
+  const dir2=new THREE.DirectionalLight(0x004488,0.8);
+  dir2.position.set(3,-2,-3);
+  scene.add(dir2);
+  const pt1=new THREE.PointLight(0x00aaff,1.2,12);
+  pt1.position.set(0,3,2);
+  scene.add(pt1);
+
+  brainGroup=new THREE.Group();
+  scene.add(brainGroup);
+
+  buildAnatomicalBrain();
+
+  // Raycaster for hover
+  const raycaster=new THREE.Raycaster();
+  const mouse=new THREE.Vector2();
+  const canvas=document.getElementById('three-canvas');
+
+  canvas.addEventListener('mousemove',e=>{
+    const rect=canvas.getBoundingClientRect();
+    mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
+    mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+    raycaster.setFromCamera(mouse,camera);
+    const hits=raycaster.intersectObjects(Object.values(regionMeshes).flat(),true);
+    const tip=document.getElementById('rtip');
+    if(hits.length>0){
+      const obj=hits[0].object;
+      const rid=obj.userData.regionId;
+      if(rid){
+        tip.textContent=REGIONS[rid]?.label||rid;
+        tip.style.opacity='1';
+        hoveredRegion=rid;
+      }
+    } else {
+      tip.style.opacity='0';
+      hoveredRegion=null;
+    }
+    if(!isDrag) canvas.style.cursor=hoveredRegion?'crosshair':'grab';
+  });
+
+  canvas.addEventListener('click',e=>{
+    if(hoveredRegion) showRegion(hoveredRegion);
+  });
+
+  canvas.addEventListener('mousedown',e=>{isDrag=true;lastMX=e.clientX;lastMY=e.clientY;canvas.style.cursor='grabbing';});
+  window.addEventListener('mouseup',()=>{isDrag=false;});
+  window.addEventListener('mousemove',e=>{
+    if(!isDrag) return;
+    const dx=e.clientX-lastMX, dy=e.clientY-lastMY;
+    targetRotY+=dx*0.008; targetRotX+=dy*0.006;
+    targetRotX=Math.max(-1.1,Math.min(1.1,targetRotX));
+    lastMX=e.clientX; lastMY=e.clientY;
+  });
+  canvas.addEventListener('touchstart',e=>{isDrag=true;lastMX=e.touches[0].clientX;lastMY=e.touches[0].clientY;},{passive:true});
+  window.addEventListener('touchend',()=>isDrag=false);
+  window.addEventListener('touchmove',e=>{
+    if(!isDrag) return;
+    const dx=e.touches[0].clientX-lastMX, dy=e.touches[0].clientY-lastMY;
+    targetRotY+=dx*0.01; targetRotX+=dy*0.008;
+    targetRotX=Math.max(-1.1,Math.min(1.1,targetRotX));
+    lastMX=e.touches[0].clientX; lastMY=e.touches[0].clientY;
+  },{passive:true});
+
+  window.addEventListener('resize',()=>{
+    const w=wrap.clientWidth,h=wrap.clientHeight;
+    camera.aspect=w/h; camera.updateProjectionMatrix();
+    renderer.setSize(w,h);
+  });
+
+  animate();
+}
+
+// ── ANATOMICAL BRAIN GEOMETRY ──
+function buildAnatomicalBrain(){
+  // Clear
+  while(brainGroup.children.length) brainGroup.remove(brainGroup.children[0]);
+  regionMeshes={}; regionGlows={};
+
+  // ── CEREBRUM HEMISPHERES ──
+  buildHemisphere('left');
+  buildHemisphere('right');
+
+  // ── CEREBELLUM ──
+  buildCerebellum();
+
+  // ── BRAINSTEM ──
+  buildBrainstem();
+
+  // ── DEEP STRUCTURES ──
+  buildDeepStructures();
+
+  // ── CORPUS CALLOSUM ──
+  buildCorpusCallosum();
+}
+
+function makeMaterial(color,opacity=0.38,wireframe=false){
+  return new THREE.MeshPhongMaterial({
+    color,
+    transparent:true,
+    opacity,
+    side:THREE.DoubleSide,
+    depthWrite:false,
+    wireframe,
+    shininess:60,
+    specular:new THREE.Color(0x224466),
+  });
+}
+
+function makeGlowMaterial(color){
+  return new THREE.MeshBasicMaterial({
+    color,transparent:true,opacity:0,
+    side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending
+  });
+}
+
+function addToRegion(mesh,regionId){
+  mesh.userData.regionId=regionId;
+  if(!regionMeshes[regionId]) regionMeshes[regionId]=[];
+  regionMeshes[regionId].push(mesh);
+  brainGroup.add(mesh);
+}
+
+function addGlow(mesh,regionId){
+  if(!regionGlows[regionId]) regionGlows[regionId]=[];
+  regionGlows[regionId].push(mesh);
+  brainGroup.add(mesh);
+}
+
+// Cerebral hemisphere with gyri/sulci using displace + merged geometry
+function buildHemisphere(side){
+  const sx=side==='left'?-1:1;
+
+  // Base hemisphere shape (elongated egg-like)
+  const geo=new THREE.SphereGeometry(1,64,48,0,Math.PI*2,0,Math.PI);
+
+  // Deform to brain-like shape
+  const pos=geo.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    let x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+    // Flatten bottom
+    if(y<0) y*=0.5;
+    // Elongate front-back (z axis = anterior-posterior)
+    z*=1.3;
+    // Widen left-right slightly
+    x*=0.95;
+    // Frontal bulge
+    if(z<-0.2) x*=(1+0.15*Math.max(0,-z));
+    // Occipital narrowing
+    if(z>0.5) x*=(1-0.2*(z-0.5));
+    // Parietal flattening on top
+    if(y>0.7&&Math.abs(z)<0.4) y*=0.92;
+    // Temporal bulge (sides, mid-low)
+    if(Math.abs(x)>0.6&&y<0.1&&Math.abs(z)<0.5) x*=1.12;
+    // Add gyri via noise
+    const freq1=4.5,freq2=7,freq3=11;
+    const noise=(
+      0.045*Math.sin(x*freq1+z*3.2)*Math.cos(y*freq1) +
+      0.028*Math.sin(z*freq2-x*2.8)*Math.cos(y*freq2+1.5) +
+      0.014*Math.sin(x*freq3+y*4+z*5)*Math.cos(z*8)
+    );
+    const r=Math.sqrt(x*x+y*y+z*z);
+    x+=noise*(x/r); y+=noise*(y/r); z+=noise*(z/r);
+    pos.setXYZ(i,x*sx,y,z);
+  }
+  geo.computeVertexNormals();
+
+  // Main hemisphere mesh
+  const mat=makeMaterial(0x0a2a50,0.32);
+  const mesh=new THREE.Mesh(geo,mat);
+  mesh.position.set(sx*0.05,0.05,0);
+  addToRegion(mesh,side==='left'?'frontal':'frontal');
+
+  // Lobes as separate overlay regions
+  buildLobeMasks(side,sx);
+
+  // Glow overlay
+  const glowGeo=geo.clone();
+  const glowMat=makeGlowMaterial(0x0044ff);
+  const glow=new THREE.Mesh(glowGeo,glowMat);
+  glow.position.copy(mesh.position);
+  glow.scale.setScalar(1.01);
+  addGlow(glow,'frontal');
+}
+
+function buildLobeMasks(side,sx){
+  // Create lobe-specific meshes by selecting vertex ranges based on position
+  const lobes=[
+    {id:'frontal',    color:0x0033aa, test:(x,y,z)=>z<-0.1&&y>-0.2},
+    {id:'prefrontal', color:0x0055cc, test:(x,y,z)=>z<-0.5&&y>-0.1},
+    {id:'parietal',   color:0x005588, test:(x,y,z)=>y>0.5&&z>-0.3&&z<0.4},
+    {id:'temporal',   color:0x003366, test:(x,y,z)=>y<-0.05&&Math.abs(x)>0.5&&z<0.5},
+    {id:'occipital',  color:0x002244, test:(x,y,z)=>z>0.5},
+  ];
+
+  lobes.forEach(lobe=>{
+    const geo=new THREE.SphereGeometry(1,40,32,0,Math.PI*2,0,Math.PI);
+    const pos=geo.attributes.position;
+    for(let i=0;i<pos.count;i++){
+      let x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+      if(y<0) y*=0.5; z*=1.3; x*=0.95;
+      if(z<-0.2) x*=(1+0.15*Math.max(0,-z));
+      if(z>0.5) x*=(1-0.2*(z-0.5));
+      if(y>0.7&&Math.abs(z)<0.4) y*=0.92;
+      if(Math.abs(x)>0.6&&y<0.1&&Math.abs(z)<0.5) x*=1.12;
+      const freq1=4.5,freq2=7;
+      const noise=0.04*Math.sin(x*freq1+z*3)*Math.cos(y*freq1)+0.025*Math.sin(z*freq2-x*2.8)*Math.cos(y*freq2+1.5);
+      const r=Math.sqrt(x*x+y*y+z*z)||1;
+      x+=noise*(x/r); y+=noise*(y/r); z+=noise*(z/r);
+      // Fade out vertices not in lobe area
+      const inLobe=lobe.test(x,y,z);
+      if(!inLobe){x*=0.001;y*=0.001;z*=0.001;}
+      pos.setXYZ(i,x*sx,y,z);
+    }
+    geo.computeVertexNormals();
+    const mat=makeMaterial(lobe.color,0.0);
+    const mesh=new THREE.Mesh(geo,mat);
+    mesh.position.set(sx*0.05,0.05,0);
+    mesh.scale.setScalar(1.005);
+    addToRegion(mesh,lobe.id);
+
+    // Glow
+    const gGeo=geo.clone();
+    const gMat=makeGlowMaterial(lobe.color);
+    const gMesh=new THREE.Mesh(gGeo,gMat);
+    gMesh.position.copy(mesh.position);
+    gMesh.scale.setScalar(1.015);
+    addGlow(gMesh,lobe.id);
+  });
+}
+
+function buildCerebellum(){
+  // Cerebellum: posterior-inferior, smaller, very folded
+  const geo=new THREE.SphereGeometry(0.52,48,32);
+  const pos=geo.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    let x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+    // Flatten & widen
+    y*=0.7; x*=1.3;
+    // Folia (fine folds)
+    const freq=14;
+    const folia=0.04*Math.sin(x*freq+z*8)*Math.cos(y*freq+2)+0.025*Math.sin(z*freq+x*5)*Math.cos(y*10);
+    const r=Math.sqrt(x*x+y*y+z*z)||1;
+    x+=folia*(x/r); y+=folia*(y/r); z+=folia*(z/r);
+    pos.setXYZ(i,x,y,z);
+  }
+  geo.computeVertexNormals();
+
+  const mat=makeMaterial(0x0a1a44,0.4);
+  const mesh=new THREE.Mesh(geo,mat);
+  mesh.position.set(0,-0.55,0.85);
+  addToRegion(mesh,'cerebellum');
+
+  const gMat=makeGlowMaterial(0x2244ff);
+  const gMesh=new THREE.Mesh(geo.clone(),gMat);
+  gMesh.position.copy(mesh.position);
+  gMesh.scale.setScalar(1.04);
+  addGlow(gMesh,'cerebellum');
+}
+
+function buildBrainstem(){
+  // Brainstem: medulla+pons+midbrain as tapered cylinder with bumps
+  const curve=new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0,-0.1,0.3),
+    new THREE.Vector3(0,-0.3,0.5),
+    new THREE.Vector3(0,-0.55,0.65),
+    new THREE.Vector3(0,-0.85,0.72),
+    new THREE.Vector3(0,-1.15,0.68),
+  ]);
+  const geo=new THREE.TubeGeometry(curve,24,0.16,16,false);
+  const pos=geo.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    let x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+    // Pons bulge (mid)
+    const t=(y+1.2)/1.1;
+    if(t>0.3&&t<0.6){const b=Math.sin((t-0.3)/0.3*Math.PI)*0.06;x*=(1+b);z*=(1+b*0.5);}
+    pos.setXYZ(i,x,y,z);
+  }
+  geo.computeVertexNormals();
+  const mat=makeMaterial(0x051535,0.5);
+  const mesh=new THREE.Mesh(geo,mat);
+  addToRegion(mesh,'brainstem');
+
+  const gMat=makeGlowMaterial(0x0066ff);
+  const gMesh=new THREE.Mesh(geo.clone(),gMat);
+  gMesh.scale.setScalar(1.05);
+  addGlow(gMesh,'brainstem');
+}
+
+function buildDeepStructures(){
+  const structs=[
+    // [regionId, posX, posY, posZ, scaleX, scaleY, scaleZ, color, opacity, rotZ]
+    ['thalamus',         0,   0.05,  0.1,  0.32,0.22,0.28, 0x0044aa, 0.55, 0],
+    ['hypothalamus',     0,  -0.22,  0.0,  0.20,0.14,0.18, 0x003388, 0.55, 0],
+    ['hippocampus',   0.35,  -0.15,  0.2,  0.38,0.14,0.18, 0x0055cc, 0.55, 0.3],
+    ['hippocampus',  -0.35,  -0.15,  0.2,  0.38,0.14,0.18, 0x0055cc, 0.55,-0.3],
+    ['amygdala',      0.32,  -0.22, -0.1,  0.18,0.16,0.16, 0x0044bb, 0.6,  0],
+    ['amygdala',     -0.32,  -0.22, -0.1,  0.18,0.16,0.16, 0x0044bb, 0.6,  0],
+    ['nucleus_accumbens',0.22,-0.05,-0.15, 0.16,0.13,0.14, 0x0066cc, 0.6,  0],
+    ['nucleus_accumbens',-0.22,-0.05,-0.15,0.16,0.13,0.14, 0x0066cc, 0.6,  0],
+    ['striatum',      0.28,  0.05,  -0.05, 0.22,0.18,0.20, 0x003a88, 0.5,  0],
+    ['striatum',     -0.28,  0.05,  -0.05, 0.22,0.18,0.20, 0x003a88, 0.5,  0],
+    ['vta',           0,    -0.3,   0.25,  0.16,0.10,0.12, 0x002266, 0.65, 0],
+    ['raphe',         0,    -0.45,  0.45,  0.10,0.10,0.20, 0x001a55, 0.65, 0],
+    ['locus_coeruleus',0.08,-0.42,  0.55,  0.10,0.08,0.12, 0x001a44, 0.65, 0],
+    ['locus_coeruleus',-0.08,-0.42, 0.55,  0.10,0.08,0.12, 0x001a44, 0.65, 0],
+  ];
+
+  structs.forEach(([rid,px,py,pz,sx,sy,sz,col,op,rz])=>{
+    const geo=new THREE.SphereGeometry(1,24,18);
+    const mat=makeMaterial(col,op);
+    const mesh=new THREE.Mesh(geo,mat);
+    mesh.position.set(px,py,pz);
+    mesh.scale.set(sx,sy,sz);
+    if(rz) mesh.rotation.z=rz;
+    addToRegion(mesh,rid);
+
+    const gGeo=new THREE.SphereGeometry(1,24,18);
+    const gMat=makeGlowMaterial(col);
+    const gMesh=new THREE.Mesh(gGeo,gMat);
+    gMesh.position.set(px,py,pz);
+    gMesh.scale.set(sx*1.25,sy*1.25,sz*1.25);
+    if(rz) gMesh.rotation.z=rz;
+    addGlow(gMesh,rid);
+  });
+}
+
+function buildCorpusCallosum(){
+  // Curved band connecting hemispheres
+  const curve=new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.8,0.25,-0.3),
+    new THREE.Vector3(-0.4,0.42,-0.1),
+    new THREE.Vector3(0,0.45,0.05),
+    new THREE.Vector3(0.4,0.42,-0.1),
+    new THREE.Vector3(0.8,0.25,-0.3),
+  ]);
+  const geo=new THREE.TubeGeometry(curve,20,0.055,10,false);
+  const mat=makeMaterial(0x0a2244,0.45);
+  const mesh=new THREE.Mesh(geo,mat);
+  addToRegion(mesh,'corpus_callosum');
+
+  const gMat=makeGlowMaterial(0x0066aa);
+  const gMesh=new THREE.Mesh(geo.clone(),gMat);
+  gMesh.scale.setScalar(1.06);
+  addGlow(gMesh,'corpus_callosum');
+}
+
+// ── ACTIVATION UPDATE ──
+function getActivation(rid){
+  let t=0;
+  [...SUBS.endo,...SUBS.exo].forEach(s=>{
+    if(s.regions.includes(rid)&&vals[s.id]>0) t+=vals[s.id]/100;
+  });
+  return Math.min(t,1);
+}
+
+function getBlendColor(rid){
+  let r=0,g=0,b=0,w=0;
+  [...SUBS.endo,...SUBS.exo].forEach(s=>{
+    if(s.regions.includes(rid)&&vals[s.id]>0){
+      const wt=vals[s.id]/100;
+      const h=s.hex;
+      r+=((h>>16)&0xff)*wt; g+=((h>>8)&0xff)*wt; b+=(h&0xff)*wt; w+=wt;
+    }
+  });
+  if(!w) return null;
+  return new THREE.Color(Math.min(255,r/w)/255,Math.min(255,g/w)/255,Math.min(255,b/w)/255);
+}
+
+function updateBrainActivation(){
+  Object.keys(REGIONS).forEach(rid=>{
+    const act=getActivation(rid);
+    const col=getBlendColor(rid);
+
+    // Update main meshes
+    if(regionMeshes[rid]){
+      regionMeshes[rid].forEach(m=>{
+        if(act>0&&col){
+          m.material.color.set(col);
+          m.material.opacity=0.28+act*0.5;
+          m.material.emissive=col;
+          m.material.emissiveIntensity=act*0.4;
+        } else {
+          m.material.color.set(0x0a2a50);
+          m.material.opacity=0.25;
+          m.material.emissive=new THREE.Color(0,0,0);
+          m.material.emissiveIntensity=0;
+        }
+      });
+    }
+
+    // Update glow meshes
+    if(regionGlows[rid]){
+      regionGlows[rid].forEach(m=>{
+        if(act>0&&col){
+          m.material.color.set(col);
+          m.material.opacity=act*0.35;
+        } else {
+          m.material.opacity=0;
+        }
+      });
+    }
+  });
+}
+
+// ── ANIMATE ──
+let pulseT=0;
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=clock.getDelta();
+  pulseT+=dt;
+
+  // Smooth rotation
+  curRotY+=(targetRotY-curRotY)*0.08;
+  curRotX+=(targetRotX-curRotX)*0.08;
+  brainGroup.rotation.y=curRotY;
+  brainGroup.rotation.x=curRotX;
+
+  // Pulse glow on active regions
+  Object.keys(REGIONS).forEach(rid=>{
+    const act=getActivation(rid);
+    if(act>0&&regionGlows[rid]){
+      const pulse=0.85+0.15*Math.sin(pulseT*2.5+act*3);
+      regionGlows[rid].forEach(m=>{
+        m.material.opacity=act*0.35*pulse;
+      });
+    }
+  });
+
+  renderer.render(scene,camera);
+}
+
+function setView(v){
+  document.querySelectorAll('.vbtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('vb-'+v).classList.add('active');
+  if(v==='lat'){targetRotY=-0.3;targetRotX=0.15;}
+  else if(v==='sag'){targetRotY=0;targetRotX=0.15;}
+  else if(v==='top'){targetRotY=0;targetRotX=Math.PI/2*0.9;}
+  else if(v==='ant'){targetRotY=Math.PI/2;targetRotX=0.1;}
+}
+
+// ═══════════════════════════════════════════
+// CHART
+// ═══════════════════════════════════════════
+const CHART_IDS=['dopamine','serotonin','norepinephrine','gaba','glutamate','acetylcholine'];
+const chartHist={}; CHART_IDS.forEach(id=>chartHist[id]=Array(100).fill(0));
+const cc=document.getElementById('chartcv');
+const cctx=cc.getContext('2d');
+
+function resizeChart(){cc.width=cc.parentElement.clientWidth;cc.height=118;}
+
+function updateChart(){
+  CHART_IDS.forEach(id=>{
+    chartHist[id].shift();
+    const base=vals[id]/100,noise=(Math.random()-.5)*.03;
+    chartHist[id].push(Math.max(0,Math.min(1,base+noise)));
+  });
+  drawChart();
+}
+
+function drawChart(){
+  const cw=cc.width,ch=cc.height;
+  cctx.clearRect(0,0,cw,ch);
+  cctx.fillStyle='#010912'; cctx.fillRect(0,0,cw,ch);
+  cctx.strokeStyle='rgba(0,80,160,.12)'; cctx.lineWidth=.5;
+  [0,25,50,75,100].forEach(p=>{
+    const y=ch*(1-p/100);
+    cctx.beginPath();cctx.moveTo(0,y);cctx.lineTo(cw,y);cctx.stroke();
+    cctx.fillStyle='rgba(50,100,140,.6)';cctx.font='7px Share Tech Mono';
+    cctx.textAlign='left';cctx.fillText(p+'%',2,y-2);
+  });
+  const allS=[...SUBS.endo,...SUBS.exo];
+  CHART_IDS.forEach(id=>{
+    const sub=allS.find(s=>s.id===id); if(!sub) return;
+    const hist=chartHist[id],h=sub.hex;
+    const r=(h>>16)&0xff,g=(h>>8)&0xff,b=h&0xff;
+    cctx.beginPath();
+    hist.forEach((v,i)=>{const x=(i/(hist.length-1))*cw,y=ch*(1-v);i?cctx.lineTo(x,y):cctx.moveTo(x,y);});
+    cctx.strokeStyle=`rgba(${r},${g},${b},.85)`;cctx.lineWidth=1.2;cctx.stroke();
+  });
+  cctx.fillStyle='rgba(50,100,140,.5)';cctx.font='7px Share Tech Mono';cctx.textAlign='center';
+  [-60,-45,-30,-15,0].forEach((t,i)=>{cctx.fillText(t+'s',(i/4)*cw,ch-2);});
+}
+
+function buildChartLegend(){
+  const el=document.getElementById('cleg'); el.innerHTML='';
+  const allS=[...SUBS.endo,...SUBS.exo];
+  CHART_IDS.forEach(id=>{
+    const sub=allS.find(s=>s.id===id); if(!sub) return;
+    el.innerHTML+=`<div class="cli"><div class="cldot" style="background:${sub.color}"></div>${sub.name}</div>`;
+  });
+}
+
+// ═══════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════
+function buildSliders(cid,list){
+  const el=document.getElementById(cid); el.innerHTML='';
+  list.forEach(s=>{
+    el.innerHTML+=`<div class="sub">
+      <div class="srow">
+        <div class="sdot" style="background:${s.color};box-shadow:0 0 4px ${s.color}66"></div>
+        <span class="sname" style="color:${s.color}">${s.name}</span>
+        <span class="spct" id="val-${s.id}">0%</span>
+      </div>
+      <div class="sdesc">${s.desc}</div>
+      <input type="range" min="0" max="100" value="0" step="1" id="sl-${s.id}"
+        style="accent-color:${s.color}" oninput="onSlide('${s.id}',this.value)">
+    </div>`;
+  });
+}
+
+function onSlide(id,v){
+  vals[id]=parseInt(v);
+  document.getElementById('val-'+id).textContent=v+'%';
+  updateBrainActivation();
+  updateActiveTags(); updateRightRegions(); updateActiveRegionsGrid();
+  updateConflicts(); updateStatus();
+}
+
+function updateActiveTags(){
+  const el=document.getElementById('active-tags'); el.innerHTML='';
+  [...SUBS.endo,...SUBS.exo].filter(s=>vals[s.id]>0).forEach(s=>{
+    const h=s.hex,r=(h>>16)&0xff,g=(h>>8)&0xff,b=h&0xff;
+    el.innerHTML+=`<div class="atag on" style="color:${s.color};border-color:${s.color};background:rgba(${r},${g},${b},.1)">${s.name.toUpperCase()} ${vals[s.id]}%</div>`;
+  });
+}
+
+function updateRightRegions(){
+  const el=document.getElementById('rregs'); el.innerHTML='';
+  const ents=Object.entries(REGIONS)
+    .map(([id,r])=>({id,r,act:getActivation(id),col:getBlendColor(id)}))
+    .filter(e=>e.act>0).sort((a,b)=>b.act-a.act).slice(0,8);
+  ents.forEach(({id,r,act,col})=>{
+    const pct=Math.round(act*100);
+    const cs=col?`rgb(${Math.round(col.r*255)},${Math.round(col.g*255)},${Math.round(col.b*255)})`:'#2a6a8a';
+    el.innerHTML+=`<div class="ari" onclick="showRegion('${id}')">
+      <div class="aritop">
+        <div class="aridot" style="background:${cs};box-shadow:0 0 4px ${cs}"></div>
+        <span class="ariname" style="color:${cs}">${r.label}</span>
+        <span class="aripct">${pct}%</span>
+      </div>
+      <div class="arisub">${r.desc.split(',').slice(0,2).join(',')}</div>
+      <div class="aribar"><div class="arifill" style="width:${pct}%;background:${cs}"></div></div>
+    </div>`;
+  });
+  if(!ents.length) el.innerHTML=`<div style="font-family:var(--mono);font-size:8px;color:var(--text3);padding:6px">No active regions yet</div>`;
+}
+
+function showRegion(id){
+  const r=REGIONS[id],act=getActivation(id),col=getBlendColor(id);
+  const cs=col?`rgb(${Math.round(col.r*255)},${Math.round(col.g*255)},${Math.round(col.b*255)})`:'var(--accent)';
+  const allS=[...SUBS.endo,...SUBS.exo];
+  const active=allS.filter(s=>s.regions.includes(id)&&vals[s.id]>0).map(s=>s.name).join(', ')||'None';
+  document.getElementById('selbox').innerHTML=`
+    <div style="color:${cs};font-family:var(--mono);font-size:10px;margin-bottom:5px">${r.label}</div>
+    <div class="sblbl">Activity Level</div><div class="sbval">${Math.round(act*100)}%</div>
+    <div class="sblbl" style="margin-top:4px">Active Compounds</div><div class="sbdet">${active}</div>
+    <div class="sblbl" style="margin-top:4px">Functions</div><div class="sbdet">${r.desc}</div>`;
+  document.getElementById('selwrap').style.display='block';
+}
+
+function updateActiveRegionsGrid(){
+  const el=document.getElementById('argrid'); el.innerHTML='';
+  const ents=Object.entries(REGIONS)
+    .map(([id,r])=>({id,r,act:getActivation(id),col:getBlendColor(id)}))
+    .filter(e=>e.act>0).sort((a,b)=>b.act-a.act).slice(0,6);
+  ents.forEach(({id,r,act,col})=>{
+    const pct=Math.round(act*100);
+    const cs=col?`rgb(${Math.round(col.r*255)},${Math.round(col.g*255)},${Math.round(col.b*255)})`:'#2a6a8a';
+    el.innerHTML+=`<div class="argi">
+      <div class="argidot" style="background:${cs};box-shadow:0 0 4px ${cs}"></div>
+      <div class="argiinfo">
+        <div class="arginame" style="color:${cs}">${r.label}</div>
+        <div class="argisub">${r.desc.split(',')[0]}</div>
+      </div>
+      <span class="argipct">${pct}%</span>
+    </div>`;
+  });
+  if(!ents.length) el.innerHTML=`<div style="font-family:var(--mono);font-size:8px;color:var(--text3);grid-column:1/-1;padding:4px">Adjust sliders to activate regions</div>`;
+}
+
+function updateStatus(){
+  const dop=vals.dopamine/100+vals.mdma/200;
+  const ser=vals.serotonin/100+vals.mdma/200+vals.lsd/150+vals.psilocybin/150;
+  const gab=vals.gaba/100+vals.alcohol/120;
+  const stim=vals.norepinephrine/100+vals.caffeine/80;
+  const exoSum=['lsd','mdma','psilocybin','alcohol','thc'].reduce((s,id)=>s+vals[id],0);
+  const set=(id,cls,on)=>{const el=document.getElementById(id);el.className='sp'+(on?' '+cls:'');};
+  set('p-calm','calm',gab>.3&&stim<.35);
+  set('p-focus','focus',stim>.3&&exoSum<100&&dop>.2);
+  set('p-alert','focus',stim>.65&&vals.cortisol>40);
+  set('p-euph','euph',dop+ser>.85);
+  set('p-warn','danger',exoSum>220||dop>2||ser>2);
+  let st='BASELINE',sc='var(--accent2)';
+  if(gab>.5&&stim<.2){st='SEDATED';sc='#4488ff';}
+  else if(stim>.8&&vals.cortisol>60){st='FIGHT/FLIGHT';sc='#ff7700';}
+  else if(dop>.8&&ser>.6){st='EUPHORIC';sc='#cc55ff';}
+  else if(vals.lsd>30||vals.psilocybin>30){st='ALTERED';sc='#ff88ff';}
+  else if(ser>.5&&gab>.4){st='CALM/RELAXED';sc='#00ff88';}
+  else if(stim>.5&&dop>.4){st='FOCUSED';sc='#00ccff';}
+  else if(vals.serotonin<15&&vals.dopamine<15&&vals.cortisol>50){st='DEPRESSED';sc='#4488ff';}
+  else if(dop+ser>.4){st='ELEVATED';sc='#00ffcc';}
+  const ms=document.getElementById('mstate');ms.textContent=st;ms.style.color=sc;
+  const allS=[...SUBS.endo,...SUBS.exo];
+  let mx=0,dom='—';
+  allS.forEach(s=>{if(vals[s.id]>mx){mx=vals[s.id];dom=s.name;}});
+  document.getElementById('dominant').textContent=mx>0?dom:'—';
+}
+
+function updateConflicts(){
+  const active=CONFLICTS.filter(c=>c.ids.every(id=>vals[id]>20));
+  document.getElementById('clist').innerHTML=active.map(c=>`<div class="cpitem">• ${c.msg}</div>`).join('');
+  const btn=document.getElementById('btn-conf');
+  if(active.length){btn.classList.add('hot');document.getElementById('cpop').classList.add('show');}
+  else btn.classList.remove('hot');
+}
+let cpOpen=false;
+function toggleConflicts(){cpOpen=!cpOpen;document.getElementById('cpop').classList.toggle('show',cpOpen);}
+
+function resetAll(){
+  [...SUBS.endo,...SUBS.exo].forEach(s=>{
+    vals[s.id]=0;
+    const sl=document.getElementById('sl-'+s.id),vl=document.getElementById('val-'+s.id);
+    if(sl)sl.value=0;if(vl)vl.textContent='0%';
+  });
+  updateBrainActivation();
+  document.getElementById('active-tags').innerHTML='';
+  document.getElementById('selwrap').style.display='none';
+  document.getElementById('cpop').classList.remove('show');
+  document.getElementById('mstate').textContent='BASELINE';
+  document.getElementById('mstate').style.color='var(--accent2)';
+  document.getElementById('dominant').textContent='—';
+  updateRightRegions();updateActiveRegionsGrid();updateStatus();
+}
+
+function buildPresets(){
+  const el=document.getElementById('pgrid');el.innerHTML='';
+  PRESETS.forEach(p=>{
+    el.innerHTML+=`<button class="pbtn" onclick='applyPreset(${JSON.stringify(p)})'><span class="pi">${p.ico}</span>${p.name}</button>`;
+  });
+}
+
+function applyPreset(p){
+  resetAll();
+  Object.entries(p.vals).forEach(([id,v])=>{
+    vals[id]=v;
+    const sl=document.getElementById('sl-'+id),vl=document.getElementById('val-'+id);
+    if(sl)sl.value=v;if(vl)vl.textContent=v+'%';
+  });
+  updateBrainActivation();
+  updateActiveTags();updateRightRegions();updateActiveRegionsGrid();updateConflicts();updateStatus();
+}
+
+function savePreset(){
+  const name=prompt('Name this preset:');
+  if(!name) return;
+  const cur={};[...SUBS.endo,...SUBS.exo].forEach(s=>{if(vals[s.id]>0)cur[s.id]=vals[s.id];});
+  const p={name,ico:'💾',vals:cur};
+  const btn=document.createElement('button');
+  btn.className='pbtn';btn.innerHTML=`<span class="pi">💾</span>${name}`;
+  btn.onclick=()=>applyPreset(p);
+  document.getElementById('pgrid').appendChild(btn);
+}
+
+function buildInfo(){
+  const el=document.getElementById('inflist');el.innerHTML='';
+  [...SUBS.endo,...SUBS.exo].forEach(s=>{
+    el.innerHTML+=`<div class="ient">
+      <div class="iename" style="color:${s.color}">${s.name}</div>
+      <div class="iedesc">${s.desc}</div>
+      <div class="ieregs">→ ${s.regions.map(r=>REGIONS[r]?.label||r).join(', ')}</div>
+    </div>`;
+  });
+}
+
+function switchTab(t){
+  ['chem','pre','inf'].forEach((n,i)=>{
+    document.getElementById('tab-'+n).classList.toggle('active',n===t);
+    document.querySelectorAll('.ptab')[i].classList.toggle('active',n===t);
+  });
+}
+
+function exportData(){
+  const data={timestamp:new Date().toISOString(),compounds:{},regions:{}};
+  [...SUBS.endo,...SUBS.exo].forEach(s=>{if(vals[s.id]>0)data.compounds[s.id]=vals[s.id];});
+  Object.keys(REGIONS).forEach(id=>{const a=getActivation(id);if(a>0)data.regions[id]=Math.round(a*100);});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download='neurochem_export.json';a.click();
+}
+
+// Timer
+const t0=Date.now();
+setInterval(()=>{
+  const e=Math.floor((Date.now()-t0)/1000);
+  document.getElementById('elapsed').textContent=
+    [Math.floor(e/3600),Math.floor(e%3600/60),e%60].map(n=>n.toString().padStart(2,'0')).join(':');
+},1000);
+
+// Chart loop
+let lastChart=0;
+setInterval(()=>{updateChart();updateRightRegions();updateActiveRegionsGrid();updateStatus();},200);
+
+// INIT
+buildSliders('endo-list',SUBS.endo);
+buildSliders('exo-list',SUBS.exo);
+buildPresets();buildInfo();buildChartLegend();
+resizeChart();drawChart();
+window.addEventListener('resize',()=>{resizeChart();drawChart();});
+initThree();
+</script>
+</body>
+</html>
